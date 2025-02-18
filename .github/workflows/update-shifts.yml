@@ -1,29 +1,35 @@
-name: Update Shifts
+name: Update shifts.json
 
 on:
-  workflow_dispatch: # Запускаем вручную (можно добавить schedule)
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+  repository_dispatch:
+    types: [update-shifts]
 
 jobs:
-  update-shifts:
+  update:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout репозиторий
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Настройка Git
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
+      - name: Setup Node.js
+        uses: actions/setup-node@v18
 
-      - name: Обновление смен
+      - name: Update shifts.json
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: |
-          echo '{ "shifts": [] }' > shifts.json
+          echo "Обновляем shifts.json"
+          curl -X GET -H "Authorization: token $GIT_TOKEN" \
+            https://api.github.com/repos/89609630063/shifts-data/contents/shifts.json \
+            -o shifts.json.base64
+
+          base64 -d shifts.json.base64 > shifts.json || echo '{}' > shifts.json
+          
+          echo '${{ github.event.client_payload.shifts }}' > shifts.json
+
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
           git add shifts.json
-          git commit -m "🔄 Авто-обновление смен"
+          git commit -m "🔄 Автоматическое обновление shifts.json"
           git push

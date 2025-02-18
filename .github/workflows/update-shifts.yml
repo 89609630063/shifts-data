@@ -1,0 +1,29 @@
+name: Update Shifts
+
+on:
+  workflow_dispatch: # Запускаем вручную (можно добавить schedule)
+  push:
+    branches:
+      - main
+
+jobs:
+  update-shifts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout репозиторий
+        uses: actions/checkout@v4
+
+      - name: Настройка Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Обновление смен
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo '{ "shifts": [] }' > shifts.json
+          git add shifts.json
+          git commit -m "🔄 Авто-обновление смен"
+          git push
